@@ -58,4 +58,49 @@ class DatasourceService:
         entry["status"] = target
         entry["pending"] = target != STATUS_ORDER[-1]
         entry["abnormal"] = action in NEGATIVE_ACTIONS
+        if action == "移除源":
+            # 移除源直接影响可回退目标，跟着重算代理模块的故障切队列与结果数据（幂等）
+            from app.services.failover import failover_service
+
+            recompute = failover_service.recompute("数据源池移除源触发重算")
+            return entry, (
+                f"数据源条目已{action}；故障切队列已重算"
+                f"（新增 {len(recompute['新增队列项'])} 项、失效 {len(recompute['标记失效'])} 项）"
+            )
         return entry, f"数据源条目已{action}"
+
+    def review_entries(self, entry_ids: list[int]) -> tuple[list[dict[str, Any]], list[str]]:
+        """故障切换后的字段复核：把条目标记为已复核，便于清单逐条核对。"""
+        reviewed: list[dict[str, Any]] = []
+        missing: list[str] = []
+        for entry_id in entry_ids:
+            entry = store.find(MODULE, entry_id)
+            if entry is None:
+                missing.append(str(entry_id))
+                continue
+            entry["复核状态"] = "已复核"
+            reviewed.append(entry)
+        return reviewed, missing
+
+    def group_overview(self) -> list[dict[str, Any]]:
+        """按数据源组汇总主备唯一性，供列表页和复核流程直接核对。"""
+        groups: dict[str, list[dict[str, Any]]] = {}
+        for row in store.rows(MODULE):
+            groups.setdefault(str(row.get("数据源组") or "未分组"), []).append(row)
+        view: list[dict[str, Any]] = []
+        for group, members in sorted(groups.items()):
+            primaries = [row for row in members if row.get("主备角色") == "主源"]
+            recoverable = next(
+                (row for row in members if row.get("原主保留位置")),
+                None,
+            )
+            view.append({
+                "数据源组": group,
+                "条目数": len(members),
+                "主源条目编号": (primaries[0].get("条目编号") if len(primaries) == 1 else ""),
+                "主源数量": len(primaries),
+                "主源唯一": len(primaries) == 1,
+                "可恢复原主源": (recoverable or {}).get("条目编号", ""),
+                "保留位置": (recoverable or {}).get("原主保留位置", ""),
+            })
+        return view

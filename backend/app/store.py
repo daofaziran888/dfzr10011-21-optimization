@@ -10,10 +10,23 @@ from app.seed import SEED_ROWS
 
 
 class Store:
+    # 数据源批量故障切域的派生表：不进 seed，随服务运行累积
+    FAILOVER_TABLES = (
+        "failover_batches",   # 批量故障切换批次（含逐条结果与复核快照）
+        "failover_queue",     # 代理模块的数据源批量故障切待处理队列
+        "proxy_routes",       # 代理路由读取故障切换结果后落地的路由清单
+    )
+
     def __init__(self) -> None:
         self._tables: dict[str, list[dict[str, Any]]] = {
             name: [dict(row) for row in rows] for name, rows in SEED_ROWS.items()
         }
+        for name in self.FAILOVER_TABLES:
+            self._tables[name] = []
+
+    def reset(self) -> None:
+        """把内存仓库恢复到种子状态：测试与整组重试前的统一入口。"""
+        self.__init__()
 
     def module_names(self) -> list[str]:
         return sorted(self._tables)

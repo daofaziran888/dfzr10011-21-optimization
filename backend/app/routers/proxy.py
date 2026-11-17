@@ -16,6 +16,51 @@ LIST_FIELDS = ["配置编号", "代理地址", "代理协议", "区域标签", "
 STATUSES = ["草稿", "已启用", "已降级", "已关闭"]
 
 
+@router.get("/failover/queue")
+def failover_queue(status: str | None = None) -> dict[str, Any]:
+    """代理模块的数据源批量故障切待处理队列。"""
+    items = service.list_failover_queue(status)
+    return {"items": items, "total": len(items)}
+
+
+@router.post("/failover/queue/{queue_id}/apply")
+def apply_failover(queue_id: int) -> ActionResult:
+    """代理路由读取一条故障切换结果，更新唯一主源与备用恢复位置。"""
+    queue_row, message = service.apply_failover(queue_id)
+    if queue_row is None:
+        return ActionResult(ok=False, message=message)
+    return ActionResult(ok=True, message=message, entry=queue_row)
+
+
+@router.post("/failover/apply-all")
+def apply_all_failover() -> dict[str, Any]:
+    """应用全部待处理故障切队列项，逐条返回结果。"""
+    return {"ok": True, **service.apply_all_pending()}
+
+
+@router.get("/failover/routes")
+def failover_routes() -> dict[str, Any]:
+    """代理路由清单：唯一主源 + 可恢复原主源位置 + 协议映射校验项。"""
+    items = service.list_routes()
+    return {"items": items, "total": len(items)}
+
+
+@router.post("/failover/groups/{group}/restore")
+def restore_primary(group: str) -> ActionResult:
+    """原主源恢复时回到保留位置。"""
+    result, message = service.restore_primary(group)
+    if result is None:
+        return ActionResult(ok=False, message=message)
+    return ActionResult(ok=True, message=message, entry=result)
+
+
+@router.post("/failover/recompute")
+def recompute_failover() -> ActionResult:
+    """其他业务入口触发：重算故障切队列与故障切换结果数据。"""
+    result = service.recompute_failover("采集代理路由入口重算")
+    return ActionResult(ok=True, message="故障切队列与结果数据已重算", entry=result)
+
+
 @router.get("", response_model=PageResult[dict])
 def list_entries(
     keyword: str | None = Query(default=None, description="按配置编号检索"),

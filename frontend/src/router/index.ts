@@ -10,6 +10,7 @@ const Resume = () => import('@/views/resume/index.vue')
 const Dashboard = () => import('@/views/dashboard/index.vue')
 const Crawlconf = () => import('@/views/crawlconf/index.vue')
 const Datasource = () => import('@/views/datasource/index.vue')
+const Failover = () => import('@/views/failover/index.vue')
 const Logparse = () => import('@/views/logparse/index.vue')
 const Ratelimit = () => import('@/views/ratelimit/index.vue')
 const Proxy = () => import('@/views/proxy/index.vue')
@@ -31,6 +32,7 @@ const router = createRouter({
     { path: '/dashboard', name: 'dashboard', component: Dashboard },
     { path: '/crawlconf', name: 'crawlconf', component: Crawlconf },
     { path: '/datasource', name: 'datasource', component: Datasource },
+    { path: '/failover', name: 'failover', component: Failover },
     { path: '/logparse', name: 'logparse', component: Logparse },
     { path: '/ratelimit', name: 'ratelimit', component: Ratelimit },
     { path: '/proxy', name: 'proxy', component: Proxy },

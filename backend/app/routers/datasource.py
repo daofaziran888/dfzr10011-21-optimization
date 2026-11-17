@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.schemas import ActionResult, EntryPayload, PageResult
+from app.schemas import ActionResult, EntryPayload, PageResult, ReviewPayload
 from app.services.datasource import DatasourceService
 
 router = APIRouter(prefix="/api/datasource", tags=["采集数据源池"])
@@ -14,6 +14,24 @@ service = DatasourceService()
 
 LIST_FIELDS = ["条目编号", "数据源名称", "源类型", "接入协议", "认证方式", "优先级", "最近采集", "条目状态"]
 STATUSES = ["草稿", "已接入", "已暂停", "已移除"]
+
+
+@router.get("/groups/overview")
+def group_overview() -> dict[str, Any]:
+    """按数据源组核对主备唯一性与原主源保留位置。"""
+    return {"items": service.group_overview()}
+
+
+@router.post("/review")
+def review_entries(payload: ReviewPayload) -> ActionResult:
+    """故障切换处理后的字段复核入口。"""
+    reviewed, missing = service.review_entries(payload.entry_ids)
+    if missing and not reviewed:
+        return ActionResult(ok=False, message=f"条目不存在或已归档：{'、'.join(missing)}")
+    message = f"已复核 {len(reviewed)} 条数据源条目"
+    if missing:
+        message += f"；未找到 {len(missing)} 条：{'、'.join(missing)}"
+    return ActionResult(ok=True, message=message)
 
 
 @router.get("", response_model=PageResult[dict])

@@ -15,6 +15,7 @@ from app.routers import resume as router_resume
 from app.routers import dashboard as router_dashboard
 from app.routers import crawlconf as router_crawlconf
 from app.routers import datasource as router_datasource
+from app.routers import failover as router_failover
 from app.routers import logparse as router_logparse
 from app.routers import ratelimit as router_ratelimit
 from app.routers import proxy as router_proxy
@@ -23,4 +24,4 @@ from app.routers import verify as router_verify
 from app.routers import audit as router_audit
 from app.routers import storage as router_storage
 
-ROUTERS = [router_cluster, router_shard, router_merge, router_nodecheck, router_balance, router_resume, router_dashboard, router_crawlconf, router_datasource, router_logparse, router_ratelimit, router_proxy, router_robot, router_verify, router_audit, router_storage]
+ROUTERS = [router_cluster, router_shard, router_merge, router_nodecheck, router_balance, router_resume, router_dashboard, router_crawlconf, router_datasource, router_failover, router_logparse, router_ratelimit, router_proxy, router_robot, router_verify, router_audit, router_storage]

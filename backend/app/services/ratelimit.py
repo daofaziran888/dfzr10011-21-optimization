@@ -58,4 +58,8 @@ class RatelimitService:
         entry["status"] = target
         entry["pending"] = target != STATUS_ORDER[-1]
         entry["abnormal"] = action in NEGATIVE_ACTIONS
-        return entry, f"频率规则已{action}"
+        # 别的业务入口跟着重算代理模块的数据源批量故障切队列与结果数据（幂等对账）
+        from app.services.failover import failover_service
+
+        recompute = failover_service.recompute(f"采集频率控制动作「{action}」触发重算")
+        return entry, f"频率规则已{action}；故障切队列已重算（新增 {len(recompute['新增队列项'])} 项）"

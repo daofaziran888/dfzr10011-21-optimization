@@ -28,6 +28,20 @@ class EntryPayload(BaseModel):
     remark: str | None = None
 
 
+class FailoverBatchPayload(BaseModel):
+    """数据源批量故障切换提交：一次处理多条，指定同优先级冲突的处理策略。"""
+
+    entry_ids: list[int] = Field(default_factory=list)
+    policy: str = "原数据源亲和优先"
+    batch_no: str | None = None
+    source: str | None = None
+
+
+class ReviewPayload(BaseModel):
+    """故障切换结果字段复核：按条目 id 批量确认。"""
+
+    entry_ids: list[int] = Field(default_factory=list)
+
 
 class ClusterEntry(BaseModel):
     """集群节点明细结构。"""
